@@ -35,6 +35,9 @@ const roleNames = {
 
 type RoleWithoutEmperor = Exclude<Role, typeof ROLES.EMPEROR>
 
+// 添加类型断言帮助函数
+const getRoleName = (role: RoleWithoutEmperor): string => roleNames[role];
+
 interface UserData {
   id: string;
   name: string | null;
@@ -117,7 +120,7 @@ export function PromotePanel() {
 
       if (data.user.role === targetRole) {
         toast({
-          title: `用户已是${roleNames[targetRole]}`,
+          title: `用户已是${getRoleName(targetRole)}`,
           description: "无需重复设置",
         })
         return
@@ -139,7 +142,7 @@ export function PromotePanel() {
 
       toast({
         title: "设置成功",
-        description: `已将用户 ${data.user.username || data.user.email} 设为${roleNames[targetRole]}`,
+        description: `已将用户 ${data.user.username || data.user.email} 设为${getRoleName(targetRole)}`,
       })
       setSearchText("")
     } catch (error) {
@@ -207,7 +210,11 @@ export function PromotePanel() {
                           <td className="px-4 py-2">{user.name || '-'}</td>
                           <td className="px-4 py-2">{user.email || '-'}</td>
                           <td className="px-4 py-2">{user.username || '-'}</td>
-                          <td className="px-4 py-2">{user.role ? (roleNames[user.role as Role] || user.role) : '-'}</td>
+                          <td className="px-4 py-2">{user.role ? (
+                            user.role === ROLES.EMPEROR 
+                              ? "皇帝" 
+                              : ((user.role in roleNames) ? roleNames[user.role as keyof typeof roleNames] : user.role)
+                          ) : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -263,7 +270,7 @@ export function PromotePanel() {
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            `设为${roleNames[targetRole]}`
+            `设为${getRoleName(targetRole)}`
           )}
         </Button>
       </div>

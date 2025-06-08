@@ -4,6 +4,51 @@ import { eq } from "drizzle-orm"
 
 export const runtime = "edge"
 
+// 定义用户类型
+interface User {
+  id: string;
+  name: string | null;
+  email: string | null;
+  username: string | null;
+  userRoles: Array<{
+    role: {
+      name: string;
+    }
+  }>;
+}
+
+export async function GET() {
+  try {
+    const db = createDb()
+
+    const allUsers = await db.query.users.findMany({
+      with: {
+        userRoles: {
+          with: {
+            role: true
+          }
+        }
+      }
+    });
+
+    return Response.json({
+      users: allUsers.map((user: User) => ({
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.userRoles[0]?.role.name
+      }))
+    })
+  } catch (error) {
+    console.error("Failed to fetch users:", error)
+    return Response.json(
+      { error: "获取用户列表失败" },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const json = await request.json()

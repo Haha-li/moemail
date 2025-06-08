@@ -13,6 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 const roleIcons = {
   [ROLES.DUKE]: Gem,
@@ -28,11 +35,53 @@ const roleNames = {
 
 type RoleWithoutEmperor = Exclude<Role, typeof ROLES.EMPEROR>
 
+interface UserData {
+  id: string;
+  name: string | null;
+  username: string | null;
+  email: string | null;
+  role: string | null;
+}
+
 export function PromotePanel() {
   const [searchText, setSearchText] = useState("")
   const [loading, setLoading] = useState(false)
   const [targetRole, setTargetRole] = useState<RoleWithoutEmperor>(ROLES.KNIGHT)
   const { toast } = useToast()
+  
+  // 用户列表状态
+  const [users, setUsers] = useState<UserData[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [userError, setUserError] = useState<string | null>(null)
+
+  // 获取所有用户
+  const fetchAllUsers = async () => {
+    setLoadingUsers(true)
+    setUserError(null)
+    
+    try {
+      const res = await fetch("/api/roles/users")
+      
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "获取用户列表失败")
+      }
+      
+      const data = await res.json()
+      setUsers(data.users || [])
+    } catch (error) {
+      console.error("Failed to fetch users:", error)
+      setUserError(error instanceof Error ? error.message : "获取用户列表失败")
+      toast({
+        title: "获取用户列表失败",
+        description: error instanceof Error ? error.message : "请稍后重试",
+        variant: "destructive"
+      })
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
 
   const handleAction = async () => {
     if (!searchText) return
@@ -111,6 +160,63 @@ export function PromotePanel() {
       <div className="flex items-center gap-2 mb-6">
         <Icon className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-semibold">角色管理</h2>
+        
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (open) fetchAllUsers()
+        }}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              查询所有用户
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[800px]">
+            <DialogHeader>
+              <DialogTitle>用户列表</DialogTitle>
+            </DialogHeader>
+            
+            <div className="mt-4 max-h-[60vh] overflow-auto">
+              {loadingUsers ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : userError ? (
+                <div className="text-center text-destructive py-4">
+                  {userError}
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center text-muted-foreground py-4">
+                  暂无用户数据
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="px-4 py-2 text-left">ID</th>
+                        <th className="px-4 py-2 text-left">用户名</th>
+                        <th className="px-4 py-2 text-left">邮箱</th>
+                        <th className="px-4 py-2 text-left">用户账号</th>
+                        <th className="px-4 py-2 text-left">角色</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id} className="border-b hover:bg-muted/50">
+                          <td className="px-4 py-2 font-mono text-xs">{user.id}</td>
+                          <td className="px-4 py-2">{user.name || '-'}</td>
+                          <td className="px-4 py-2">{user.email || '-'}</td>
+                          <td className="px-4 py-2">{user.username || '-'}</td>
+                          <td className="px-4 py-2">{user.role ? (roleNames[user.role as Role] || user.role) : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="space-y-4">

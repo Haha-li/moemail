@@ -64,11 +64,11 @@ export function PromotePanel() {
       const res = await fetch("/api/roles/users")
       
       if (!res.ok) {
-        const data = await res.json()
+        const data = await res.json() as { error?: string }
         throw new Error(data.error || "获取用户列表失败")
       }
       
-      const data = await res.json()
+      const data = await res.json() as { users?: UserData[] }
       setUsers(data.users || [])
     } catch (error) {
       console.error("Failed to fetch users:", error)

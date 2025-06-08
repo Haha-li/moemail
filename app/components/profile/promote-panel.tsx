@@ -150,7 +150,7 @@ export function PromotePanel() {
     }
   }
 
-  const Icon = roleIcons[targetRole]
+  const Icon = roleIcons[targetRole as keyof typeof roleIcons]
 
   return (
     <div className="bg-background rounded-lg border-2 border-primary/20 p-6">
@@ -204,7 +204,11 @@ export function PromotePanel() {
                           <td className="px-4 py-2">{user.name || '-'}</td>
                           <td className="px-4 py-2">{user.email || '-'}</td>
                           <td className="px-4 py-2">{user.username || '-'}</td>
-                          <td className="px-4 py-2">{user.role ? (roleNames[user.role as Role] || user.role) : '-'}</td>
+                          <td className="px-4 py-2">{user.role ? (
+                            user.role === ROLES.EMPEROR 
+                              ? "皇帝" 
+                              : (roleNames[user.role as 'duke' | 'knight' | 'civilian'] || user.role)
+                          ) : '-'}</td>
                         </tr>
                       ))}
                     </tbody>

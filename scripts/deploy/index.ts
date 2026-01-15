@@ -290,27 +290,28 @@ const pushPagesSecret = () => {
     const envContent = readFileSync(resolve('.env'), 'utf-8');
     const runtimeEnvFile = resolve('.env.runtime');
 
-    // 从.env文件中提取运行时变量
-    const runtimeEnvContent = envContent
-      .split('\n')
-      .filter(line => {
-        const trimmedLine = line.trim();
-        // 跳过注释和空行
-        if (!trimmedLine || trimmedLine.startsWith('#')) return false;
+    // 从.env文件中提取运行时变量并转换为JSON格式
+    const runtimeEnvObj: Record<string, string> = {};
+    
+    envContent.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      // 跳过注释和空行
+      if (!trimmedLine || trimmedLine.startsWith('#')) return;
 
-        // 检查是否为运行时所需的环境变量
-        for (const varName of runtimeEnvVars) {
-          if (line.startsWith(`${varName} =`) || line.startsWith(`${varName}=`)) {
-            const value = line.substring(line.indexOf('=') + 1).trim().replace(/^["']|["']$/g, '');
-            return value.length > 0;
+      // 检查是否为运行时所需的环境变量
+      for (const varName of runtimeEnvVars) {
+        if (line.startsWith(`${varName} =`) || line.startsWith(`${varName}=`)) {
+          const value = line.substring(line.indexOf('=') + 1).trim().replace(/^["']|["']$/g, '');
+          if (value.length > 0) {
+            runtimeEnvObj[varName] = value;
           }
+          break;
         }
-        return false;
-      })
-      .join('\n');
+      }
+    });
 
-    // 写入临时文件
-    writeFileSync(runtimeEnvFile, runtimeEnvContent);
+    // 写入JSON格式的临时文件
+    writeFileSync(runtimeEnvFile, JSON.stringify(runtimeEnvObj, null, 2));
 
     // 使用临时文件推送secrets
     execSync(`pnpm dlx wrangler pages secret bulk ${runtimeEnvFile}`, { stdio: "inherit" });

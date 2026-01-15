@@ -30,8 +30,6 @@ const roleIcons = {
 
 type RoleWithoutEmperor = Exclude<Role, typeof ROLES.EMPEROR>
 
-// 添加类型断言帮助函数
-const getRoleName = (role: RoleWithoutEmperor): string => roleNames[role];
 
 interface UserData {
   id: string;

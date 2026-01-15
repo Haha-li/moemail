@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Gem, Sword, User2, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -27,12 +28,6 @@ const roleIcons = {
   [ROLES.CIVILIAN]: User2,
 } as const
 
-const roleNames = {
-  [ROLES.DUKE]: "公爵",
-  [ROLES.KNIGHT]: "骑士",
-  [ROLES.CIVILIAN]: "平民",
-} as const
-
 type RoleWithoutEmperor = Exclude<Role, typeof ROLES.EMPEROR>
 
 // 添加类型断言帮助函数
@@ -47,6 +42,8 @@ interface UserData {
 }
 
 export function PromotePanel() {
+  const t = useTranslations("profile.promote")
+  const tCard = useTranslations("profile.card")
   const [searchText, setSearchText] = useState("")
   const [loading, setLoading] = useState(false)
   const [targetRole, setTargetRole] = useState<RoleWithoutEmperor>(ROLES.KNIGHT)
@@ -85,6 +82,11 @@ export function PromotePanel() {
       setLoadingUsers(false)
     }
   }
+  const roleNames = {
+    [ROLES.DUKE]: tCard("roles.DUKE"),
+    [ROLES.KNIGHT]: tCard("roles.KNIGHT"),
+    [ROLES.CIVILIAN]: tCard("roles.CIVILIAN"),
+  } as const
 
   const handleAction = async () => {
     if (!searchText) return
@@ -111,8 +113,8 @@ export function PromotePanel() {
 
       if (!data.user) {
         toast({
-          title: "未找到用户",
-          description: "请确认用户名或邮箱地址是否正确",
+          title: t("noUsers"),
+          description: t("searchPlaceholder"),
           variant: "destructive"
         })
         return
@@ -120,8 +122,8 @@ export function PromotePanel() {
 
       if (data.user.role === targetRole) {
         toast({
-          title: `用户已是${getRoleName(targetRole)}`,
-          description: "无需重复设置",
+          title: t("updateSuccess"),
+          description: t("updateSuccess"),
         })
         return
       }
@@ -137,18 +139,18 @@ export function PromotePanel() {
 
       if (!promoteRes.ok) {
         const error = await promoteRes.json() as { error: string }
-        throw new Error(error.error || "设置失败")
+        throw new Error(error.error || t("updateFailed"))
       }
 
       toast({
-        title: "设置成功",
-        description: `已将用户 ${data.user.username || data.user.email} 设为${getRoleName(targetRole)}`,
+        title: t("updateSuccess"),
+        description: `${data.user.username || data.user.email} - ${roleNames[targetRole]}`,
       })
       setSearchText("")
     } catch (error) {
       toast({
-        title: "设置失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("updateFailed"),
+        description: error instanceof Error ? error.message : t("updateFailed"),
         variant: "destructive"
       })
     } finally {
@@ -232,7 +234,7 @@ export function PromotePanel() {
             <Input
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="输入用户名或邮箱"
+              placeholder={t("searchPlaceholder")}
             />
           </div>
           <Select value={targetRole} onValueChange={(value) => setTargetRole(value as RoleWithoutEmperor)}>
@@ -243,19 +245,19 @@ export function PromotePanel() {
               <SelectItem value={ROLES.DUKE}>
                 <div className="flex items-center gap-2">
                   <Gem className="w-4 h-4" />
-                  公爵
+                  {roleNames[ROLES.DUKE]}
                 </div>
               </SelectItem>
               <SelectItem value={ROLES.KNIGHT}>
                 <div className="flex items-center gap-2">
                   <Sword className="w-4 h-4" />
-                  骑士
+                  {roleNames[ROLES.KNIGHT]}
                 </div>
               </SelectItem>
               <SelectItem value={ROLES.CIVILIAN}>
                 <div className="flex items-center gap-2">
                   <User2 className="w-4 h-4" />
-                  平民
+                  {roleNames[ROLES.CIVILIAN]}
                 </div>
               </SelectItem>
             </SelectContent>
@@ -270,7 +272,7 @@ export function PromotePanel() {
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            `设为${getRoleName(targetRole)}`
+            `${t("promote")} ${roleNames[targetRole]}`
           )}
         </Button>
       </div>

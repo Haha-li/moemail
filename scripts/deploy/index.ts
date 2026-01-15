@@ -324,17 +324,28 @@ const pushPagesSecret = () => {
       }
     });
 
-    // 检查是否有需要推送的secrets
-    if (Object.keys(secrets).length === 0) {
-      console.log("⚠️ No runtime secrets found to push");
-      return;
-    }
+    // 从.env文件中提取运行时变量并转换为JSON格式
+    const runtimeEnvObj: Record<string, string> = {};
+    
+    envContent.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      // 跳过注释和空行
+      if (!trimmedLine || trimmedLine.startsWith('#')) return;
 
-    // 创建JSON格式的临时文件
-    const runtimeEnvFile = resolve('.env.runtime.json');
-    writeFileSync(runtimeEnvFile, JSON.stringify(secrets, null, 2));
+      // 检查是否为运行时所需的环境变量
+      for (const varName of runtimeEnvVars) {
+        if (line.startsWith(`${varName} =`) || line.startsWith(`${varName}=`)) {
+          const value = line.substring(line.indexOf('=') + 1).trim().replace(/^["']|["']$/g, '');
+          if (value.length > 0) {
+            runtimeEnvObj[varName] = value;
+          }
+          break;
+        }
+      }
+    });
 
-    console.log(`📝 Found ${Object.keys(secrets).length} secrets to push:`, Object.keys(secrets).join(', '));
+    // 写入JSON格式的临时文件
+    writeFileSync(runtimeEnvFile, JSON.stringify(runtimeEnvObj, null, 2));
 
     // 使用临时文件推送secrets
     execSync(`pnpm dlx wrangler pages secret bulk ${runtimeEnvFile}`, { 

@@ -285,6 +285,7 @@ const pushPagesSecret = () => {
     'AUTH_GOOGLE_SECRET', 
     'AUTH_SECRET'
   ];
+  const runtimeEnvFile = resolve('.env.runtime.json');
 
   try {
     // 确保.env文件存在
@@ -362,7 +363,6 @@ const pushPagesSecret = () => {
     console.error("❌ Failed to push secrets:", error);
     
     // 确保清理临时文件
-    const runtimeEnvFile = resolve('.env.runtime.json');
     if (existsSync(runtimeEnvFile)) {
       try {
         execSync(`rm ${runtimeEnvFile}`, { stdio: "inherit" });

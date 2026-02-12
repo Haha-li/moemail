@@ -61,11 +61,11 @@ export function PromotePanel() {
       const res = await fetch("/api/roles/users")
       
       if (!res.ok) {
-        const data = await res.json()
+        const data = await res.json() as { error?: string }
         throw new Error(data.error || "获取用户列表失败")
       }
       
-      const data = await res.json()
+      const data = await res.json() as { users?: UserData[] }
       setUsers(data.users || [])
     } catch (error) {
       console.error("Failed to fetch users:", error)
@@ -79,6 +79,11 @@ export function PromotePanel() {
       setLoadingUsers(false)
     }
   }
+  const roleNames = {
+    [ROLES.DUKE]: tCard("roles.DUKE"),
+    [ROLES.KNIGHT]: tCard("roles.KNIGHT"),
+    [ROLES.CIVILIAN]: tCard("roles.CIVILIAN"),
+  } as const
 
   const handleAction = async () => {
     if (!searchText) return
